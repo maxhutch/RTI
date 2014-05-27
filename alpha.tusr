@@ -89,10 +89,11 @@ c      use ifport, only : random_number, random_seed
       integer i,j,ij, k
       integer ppm, pps
 
-      real delta, eps
+      real delta, eps, kx, ky
       integer kmax, kmin
 
       real amp(4, 64*64)
+      real rtmp
       integer kwav(2,64*64)
       save amp, kwav
 
@@ -110,18 +111,23 @@ c      use ifport, only : random_number, random_seed
 
       if (init == 0) then
         ij = 0
-        do i = 0, kmax
-	  do j = kmin-i, kmax
-	    if (sqrt(real(i*i + j*j)) > kmax) then
+        do i = 0, kmax / {kscal}
+	  do j = kmin / {kscal} -i, kmax / {kscal}
+            kx = i * {kscal}
+            ky = j * {kscal}
+	    if (sqrt(kx*kx+ky*ky) > kmax) then
               exit
-            else if (sqrt(real(i*i + j*j)) .ge. kmin) then
-	      ij = ij + 1
-	      do k = 1,4
-                call random_number(amp(k,ij))
-                amp(k,ij) = amp0*(amp(k,ij)-0.5)/kmax
-              enddo
-              kwav(1,ij) = i
-              kwav(2,ij) = j 
+            else if (j.ge.0 .and. sqrt(kx*kx+ky*ky).ge.kmin) then
+              call random_number(rtmp)
+              if (rtmp < 0.01) then 
+                ij = ij + 1
+                do k = 1,4
+                  call random_number(amp(k,ij))
+                  amp(k,ij) = amp0*2.*(amp(k,ij)-0.5)/sqrt(kx*kx+ky*ky)
+                enddo
+                kwav(1,ij) = kx
+                kwav(2,ij) = ky
+              endif
 	    endif
           enddo
 	enddo
@@ -175,7 +181,7 @@ c-----------------------------------------------------------------------
       kmin = {kmin}
       amp0 = {amp0}
       rayleigh = 9.8
-      delta = 0.1 * 16 * {extent_mesh[2]} / ({shape_mesh[2]} * {order})
+      delta = 0.5 * 1 * ({extent_mesh[2]} - ({root_mesh[2]})) / ({shape_mesh[2]} * {order})
 
       return
       end
