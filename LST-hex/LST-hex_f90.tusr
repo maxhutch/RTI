@@ -1,0 +1,209 @@
+!-----------------------------------------------------------------------
+    subroutine uservp(ix,iy,iz,eg) ! set variable properties
+    use size_m
+    use nekuse
+    implicit none
+
+    integer :: ix, iy, iz
+    integer :: e,f,eg
+
+    return
+    end subroutine uservp
+!-----------------------------------------------------------------------
+    subroutine userf(ix,iy,iz,eg) ! set acceleration term
+    use size_m
+    use nekuse
+    implicit none
+
+!     Note: this is an acceleration term, NOT a force!
+!     Thus, ffx will subsequently be multiplied by rho(x,t).
+
+    real :: rayleigh, atwood, amp0, delta
+    integer :: kmax, kmin
+    common /myvalues/ rayleigh, atwood, kmax, kmin, amp0, delta
+
+    integer :: ix, iy, iz, eg
+    integer :: e,f
+
+
+    ffx = 0.0
+    ffy = 0.0
+    ffz = rayleigh*temp
+
+    return
+    end subroutine userf
+!-----------------------------------------------------------------------
+    subroutine userq(ix,iy,iz,eg) ! set source term
+    use size_m
+    use nekuse
+    implicit none
+
+    integer :: ix, iy, iz, eg
+
+    qvol   = 0.0
+
+    return
+    end subroutine userq
+!-----------------------------------------------------------------------
+    subroutine userq2(q) ! set source term
+    use size_m
+    use nekuse
+    implicit none
+
+    real :: q(lx1, ly1, lz1, lelt)
+
+    return
+    end subroutine userq2
+!-----------------------------------------------------------------------
+    subroutine userbc(ix,iy,iz,iside,ieg) ! set up boundary conditions
+    use size_m
+    use nekuse
+    implicit none
+
+    integer :: ix, iy, iz, iside, ieg
+!      if (cbc(iside,gllel(ieg),ifield).eq.'v01')
+
+    ux   = 0.0
+    uy   = 0.0
+    uz   = 0.0
+    temp = 0.0
+
+    return
+    end subroutine userbc
+!-----------------------------------------------------------------------
+    subroutine useric(ix,iy,iz,eg) ! set up initial conditions
+!      use ifport, only : random_number, random_seed
+    use kinds, only : DP
+    use size_m
+    use nekuse
+    use zper
+    implicit none
+
+    real :: rayleigh, atwood, amp0, delta
+    integer :: kmax, kmin
+    common /myvalues/ rayleigh, atwood, kmax, kmin, amp0, delta
+
+    integer, parameter :: maxloc = 1000
+    integer :: ix, iy, iz, e, eg
+    integer :: i,j,ij, k
+    integer :: ppm, pps
+    real, parameter :: pi = 3.14159265358
+
+    real :: eps, kx, ky
+    real(DP) :: zz
+
+    real(DP), save :: xloc_up(maxloc)
+    real(DP), save :: xloc_down(maxloc)
+    real(DP), save :: yloc_up(maxloc)
+    real(DP), save :: yloc_down(maxloc)
+    real(DP) :: xloc, yloc, dx, dy
+    real(DP) :: dist_sq
+
+    integer, save :: nup, ndown
+    integer ::  max_lin
+
+    integer, save :: init = 0
+
+    if (init == 0) then
+      max_lin = 2*int(kmin * sqrt(({extent_mesh[0]}-{root_mesh[0]})**2 &
+                              + ({extent_mesh[1]}-{root_mesh[1]})**2 ))
+      dx = .5_dp / kmin / sqrt(3._dp)
+      dy = .5_dp / kmin 
+
+      nup = 0; ndown = 0
+      do i = -max_lin, max_lin
+        do j = -max_lin, max_lin
+          xloc = (i*sqrt(3._dp)/2._dp)/kmin
+          yloc = (j + i/2._dp)/kmin
+!          if (xloc >= {root_mesh[0]} .and. &
+!              xloc <= {extent_mesh[0]} .and. &
+!              yloc >= {root_mesh[1]} .and. &
+!              yloc <= {extent_mesh[1]} ) then
+            nup = nup + 1
+            xloc_up(nup) = xloc
+            yloc_up(nup) = yloc
+!            write(*,*) "Up added at", xloc, yloc, i, j
+!         endif
+
+!          if (xloc +dx >= {root_mesh[0]} .and. &
+!              xloc +dx <= {extent_mesh[0]} .and. &
+!              yloc +dy >= {root_mesh[1]} .and. &
+!              yloc +dy <= {extent_mesh[1]} ) then
+            ndown = ndown + 1
+            xloc_down(ndown) = xloc + dx
+            yloc_down(ndown) = yloc + dy
+!            write(*,*) "Down added at", xloc+dx, yloc+dx, i, j
+!          endif
+        enddo
+      enddo
+      init = 1
+    write(*,'(A10,5F)') "xloc_up", xloc_up(1:nup)
+    write(*,'(A10,5F)') "yloc_up", yloc_up(1:nup)
+    write(*,'(A10,3F)') "xloc_down", xloc_down(1:ndown)
+    write(*,'(A10,3F)') "yloc_down", yloc_down(1:ndown)
+    endif
+
+    ux   = 0.0
+    uy   = 0.0
+    uz   = 0.0
+
+    zz = 0.
+
+    dist_sq = minval((xloc_down(1:ndown) - x)**2 + (yloc_down(1:ndown) - y)**2)
+    if (dist_sq > 1._dp/kmin) write(*,*) x, y, dist_sq
+    zz = zz + amp0 * exp(- dist_sq / (2._dp*({gauss_width}/kmin)**2))
+
+    dist_sq = minval((xloc_up(1:nup) - x)**2 + (yloc_up(1:nup) - y)**2)
+    if (dist_sq > 1._dp/kmin) write(*,*) x, y, dist_sq
+    zz = zz - amp0 * exp(- dist_sq / (2._dp*({gauss_width}/kmin)**2))
+ 
+    zz = -(z + zz)/delta
+
+    temp = atwood*erf(zz)/2
+    return
+    end subroutine useric
+!-----------------------------------------------------------------------
+    subroutine userchk()
+    use size_m
+    use tstep
+    use soln
+    implicit none
+
+    if (istep == 0) call outpost(vx,vy,vz,pr,t,'   ')
+
+    return
+    end subroutine userchk
+!-----------------------------------------------------------------------
+    subroutine usrdat()   ! This routine to modify element vertices
+    use size_m
+    implicit none
+
+    return
+    end subroutine usrdat
+!-----------------------------------------------------------------------
+    subroutine usrdat2()  ! This routine to modify mesh coordinates
+    use size_m
+    implicit none
+
+    real :: rayleigh, atwood, amp0, delta
+    integer :: kmax, kmin
+
+    common /myvalues/ rayleigh, atwood, kmax, kmin, amp0, delta
+
+    atwood = {atwood}
+    kmax = {kmax}
+    kmin = {kmin}
+    amp0 = {amp0} / {kmin}
+    rayleigh = 9.8
+    delta = 0.25 * ({extent_mesh[2]} - ({root_mesh[2]})) / ({shape_mesh[2]})
+
+    return
+    end subroutine usrdat2
+!-----------------------------------------------------------------------
+    subroutine usrdat3()
+    use size_m
+    implicit none
+
+    return
+    end subroutine usrdat3
+!-----------------------------------------------------------------------
