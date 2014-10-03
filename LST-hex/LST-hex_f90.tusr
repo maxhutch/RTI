@@ -137,10 +137,6 @@
         enddo
       enddo
       init = 1
-    write(*,'(A10,5F)') "xloc_up", xloc_up(1:nup)
-    write(*,'(A10,5F)') "yloc_up", yloc_up(1:nup)
-    write(*,'(A10,3F)') "xloc_down", xloc_down(1:ndown)
-    write(*,'(A10,3F)') "yloc_down", yloc_down(1:ndown)
     endif
 
     ux   = 0.0
