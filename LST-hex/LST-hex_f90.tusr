@@ -81,78 +81,22 @@
 
     real :: rayleigh, atwood, amp0, delta
     integer :: kmax, kmin
+    integer :: ix, iy, iz, eg
     common /myvalues/ rayleigh, atwood, kmax, kmin, amp0, delta
 
-    integer, parameter :: maxloc = 1000
-    integer :: ix, iy, iz, e, eg
-    integer :: i,j,ij, k
-    integer :: ppm, pps
     real, parameter :: pi = 3.14159265358
 
-    real :: eps, kx, ky
     real(DP) :: zz
-
-    real(DP), save :: xloc_up(maxloc)
-    real(DP), save :: xloc_down(maxloc)
-    real(DP), save :: yloc_up(maxloc)
-    real(DP), save :: yloc_down(maxloc)
-    real(DP) :: xloc, yloc, dx, dy
-    real(DP) :: dist_sq
-
-    integer, save :: nup, ndown
-    integer ::  max_lin
-
-    integer, save :: init = 0
-
-    if (init == 0) then
-      max_lin = 2*int(kmin * sqrt(({extent_mesh[0]}-{root_mesh[0]})**2 &
-                              + ({extent_mesh[1]}-{root_mesh[1]})**2 ))
-      dx = .5_dp / kmin / sqrt(3._dp)
-      dy = .5_dp / kmin 
-
-      nup = 0; ndown = 0
-      do i = -max_lin, max_lin
-        do j = -max_lin, max_lin
-          xloc = (i*sqrt(3._dp)/2._dp)/kmin
-          yloc = (j + i/2._dp)/kmin
-!          if (xloc >= {root_mesh[0]} .and. &
-!              xloc <= {extent_mesh[0]} .and. &
-!              yloc >= {root_mesh[1]} .and. &
-!              yloc <= {extent_mesh[1]} ) then
-            nup = nup + 1
-            xloc_up(nup) = xloc
-            yloc_up(nup) = yloc
-!            write(*,*) "Up added at", xloc, yloc, i, j
-!         endif
-
-!          if (xloc +dx >= {root_mesh[0]} .and. &
-!              xloc +dx <= {extent_mesh[0]} .and. &
-!              yloc +dy >= {root_mesh[1]} .and. &
-!              yloc +dy <= {extent_mesh[1]} ) then
-            ndown = ndown + 1
-            xloc_down(ndown) = xloc + dx
-            yloc_down(ndown) = yloc + dy
-!            write(*,*) "Down added at", xloc+dx, yloc+dx, i, j
-!          endif
-        enddo
-      enddo
-      init = 1
-    endif
 
     ux   = 0.0
     uy   = 0.0
     uz   = 0.0
 
     zz = 0.
+    zz = zz + 2._dp * amp0 * sin(2*pi*kmin * (                  x/sqrt(3._dp))) &
+                           * sin(2*pi*kmin * (0.5_dp*y + 0.5_dp*x/sqrt(3._dp))) &
+                           * sin(2*pi*kmin * (0.5_dp*y - 0.5_dp*x/sqrt(3._dp)))
 
-    dist_sq = minval((xloc_down(1:ndown) - x)**2 + (yloc_down(1:ndown) - y)**2)
-    if (dist_sq > 1._dp/kmin) write(*,*) x, y, dist_sq
-    zz = zz + amp0 * exp(- dist_sq / (2._dp*({gauss_width}/kmin)**2))
-
-    dist_sq = minval((xloc_up(1:nup) - x)**2 + (yloc_up(1:nup) - y)**2)
-    if (dist_sq > 1._dp/kmin) write(*,*) x, y, dist_sq
-    zz = zz - amp0 * exp(- dist_sq / (2._dp*({gauss_width}/kmin)**2))
- 
     zz = -(z + zz)/delta
 
     temp = atwood*erf(zz)/2
