@@ -5,7 +5,7 @@
   "root_mesh": [
     0.0,
     0.0,
-    -4.0
+    -8.0
   ],
   "atwood": 0.001,
   "no_check": 0,
@@ -22,13 +22,13 @@
   "ngmres": 16,
   "density": 1.0,
   "io_prec": 8,
-  "filter_wt": 0.05,
+  "filter_wt": -1.0,
   "scale_mesh": [
     1.0,
     1.0,
     1.0
   ],
-  "conductivity": 4e-05,
+  "conductivity": 5e-05,
   "dt": 0.01,
   "left_bound": "SYM",
   "num_steps": 256,
@@ -37,7 +37,7 @@
   "shape_mesh": [
     32,
     32,
-    512
+    1024
   ],
   "kscal": 1,
   "order": 8,
@@ -45,24 +45,25 @@
   "nvel": 4,
   "uservp": 0,
   "dt_initial": 1e-05,
-  "end_time": 0.0,
+  "end_time": 4.0,
   "restart": 0.0,
   "top_bound": "W",
   "rho_cp": 1.0,
   "tolhelm": 0.0,
   "wait_pres": 2.0,
   "npres": 8,
-  "io_time": 0.0,
+  "io_time": 2.0,
   "extent_mesh": [
     0.5,
     0.5,
-    4.0
+    8.0
   ],
   "toldiv": 0.0,
   "dim": 3,
-  "procs": 65536,
+  "procs": 32768,
   "back_bound": "SYM",
-  "io_step": 128.0,
+  "io_step": 0.0,
   "viscosity": 0.0001,
+  "delta" : 0.0078125,
   "num_fields": 2
 }

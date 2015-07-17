@@ -109,8 +109,8 @@
     kmax = {kmax}
     kmin = {kmin}
     amp0 = {amp0}
-    rayleigh = 9.8 * {atwood}
-    delta = 1.0 * ({extent_mesh[2]} - ({root_mesh[2]})) / ({shape_mesh[2]})
+    rayleigh = {g} * {atwood}
+    delta = {delta}
 
     return
     end subroutine usrdat2
